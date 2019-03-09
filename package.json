@@ -1,0 +1,26 @@
+{
+  "name": "harmony_server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/charlesgiry/Harmony_server.git"
+  },
+  "author": "charlesgiry",
+  "license": "WTFPL",
+  "bugs": {
+    "url": "https://github.com/charlesgiry/Harmony_server/issues"
+  },
+  "homepage": "https://github.com/charlesgiry/Harmony_server#readme",
+  "dependencies": {
+    "bcrypt": "^3.0.4",
+    "express": "^4.16.4",
+    "express-validator": "^5.3.1",
+    "helmet": "^3.15.1",
+    "jsonwebtoken": "^8.5.0",
+    "morgan": "^1.9.1",
+    "socket.io": "^2.2.0",
+    "sqlite3": "^4.0.6"
+  }
+}
