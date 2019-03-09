@@ -1,4 +1,4 @@
-module.exports = function(app, config, DB, jwt, check, validationResult, bcrypt) {
+module.exports = function(app, config, DB, func, check, validationResult, bcrypt) {
 	
 	// -------------------------- Register -------------------------- //
 	app.post('/register', [
@@ -22,24 +22,20 @@ module.exports = function(app, config, DB, jwt, check, validationResult, bcrypt)
 			// Hash the password async
 			let {username, password, password2} = req.body;
 			bcrypt.hash(password, config.BCRYPT_SALT_ROUND, function(err, hash) {
+				// bcrypt error
+				if (err) {
+					obj = {success: false, errors:[err.message]};
+					res.status(500).json(obj);
+				}
+				
 				// Try to add user to DB
 				let sql = "INSERT INTO User (username, password, avatar) ";
 				sql = sql + " VALUES('" + username + "', '" + hash + "', '\/static\/pictures\/avatars\/default.jpg')";
 				let db = DB.open();
-				db.run(sql, function(err) {
-					// On error to add to DB
-					if (err) {
-						let obj = {success: false, errors:[err.message]};
-						res.status(500).json(obj);
-					}
-					
-					// No error, everything went well
-					else {
-						let obj = {success: true};
-						res.status(200).json(obj)
-					}
-				});
+				db.run(sql);
 				DB.close(db);
+				let obj = {success: true};
+				res.status(200).json(obj);
 			});
 		}
 	});
@@ -93,8 +89,9 @@ module.exports = function(app, config, DB, jwt, check, validationResult, bcrypt)
 						}
 						
 						// password is right, give back jwt token
-						else {						
-							const token = jwt.sign({_id: row._id, username: row.username}, config.SECRET);
+						else {
+							console.log(row);
+							const token = func.gen_token(row._id, row.username);
 							let obj = {success: true, token: token};
 							res.status(200).json(obj);
 						}
@@ -110,7 +107,135 @@ module.exports = function(app, config, DB, jwt, check, validationResult, bcrypt)
 		check('token').not().isEmpty().trim().escape()
 	], (req, res) => {
 		const token = req.body.token;
-		let legit = jwt.verify(token, config.SECRET);
-		res.json(legit);
+		const legit = func.get_token(token);
+		res.status(200).json(legit);
+	});
+	
+	// -------------------------- change password -------------------------- //
+	app.post('/user/changepassword', [
+		check('token').not().isEmpty().trim().escape(),
+		check('old').not().isEmpty().trim().escape(),
+		check('password').not().isEmpty().trim().escape()
+	], (req, res) => {
+		// On validation error
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			let obj = {success: false, errors: errors.array()};
+			return res.status(422).json(obj);
+		}
+		
+		let {token, old, password} = req.body;
+		let user = func.get_token(token);
+		let sql = "SELECT * FROM User WHERE _id == " + user._id;
+		let db = DB.open();
+		db.get(sql, function(err, row) {
+			// DB error
+			if (err) {
+				let obj = {success: false, errors:[err.message]};
+				res.status(500).json(obj);
+			}
+				
+			// No result 
+			else if (row == null) {
+				let obj = {success: false, errors:['Unknown error, please retry later.']};
+				res.status(401).json(obj);
+			}
+			
+			// User found, test password
+			else {
+				bcrypt.compare(old, row.password, function(err, result) {
+					// bcrypt error
+					if (err) {
+						let obj = {success: false, errors: [err.message]};
+						res.status(500).json(obj);
+					}
+					
+					// password is wrong
+					else if (!(result == true)) {
+						let obj = {success: false, errors:['Unknown error, please retry later.']};
+						res.status(401).json(obj);							
+					}
+					
+					// password is right, change it
+					else {
+						bcrypt.hash(password, config.BCRYPT_SALT_ROUND, function(err, hash) {
+							if (err) {
+								obj = {success: false, errors:[err.message]};
+								res.status(500).json(obj);
+							}
+							
+							let db = DB.open();
+							let sql = "UPDATE User SET password = '" + hash + "' WHERE _id == " + row._id;
+							db.run(sql);
+							DB.close(db);
+							let obj = {success:true};
+							res.status(200).json(obj);
+						});
+					}
+				});
+			}
+			DB.close(db);
+		});
+	});
+	
+	// -------------------------- delete user -------------------------- //
+	app.post('/delete/user', [
+		check('token').not().isEmpty().trim().escape(),
+		check('password').not().isEmpty().trim().escape()
+	], (req, res) => {
+		// On validation error
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			let obj = {success: false, errors: errors.array()};
+			return res.status(422).json(obj);
+		}
+		
+		// Try to get the user
+		let {token, password} = req.body;
+		let user = func.get_token(token);
+		let sql = "SELECT * FROM User WHERE _id == " + user._id;
+		let db = DB.open();
+		db.get(sql, function(err, row) {
+			// DB error
+			if (err) {
+				let obj = {success: false, errors:[err.message]};
+				res.status(500).json(obj);
+			}
+				
+			// No result 
+			else if (row == null) {
+				let obj = {success: false, errors:['Unknown error, please retry later.']};
+				res.status(401).json(obj);
+			}
+			
+			// User found, test password
+			else {
+				bcrypt.compare(password, row.password, function(err, result) {
+					// bcrypt error
+					if (err) {
+						let obj = {success: false, errors: [err.message]};
+						res.status(500).json(obj);
+					}
+					
+					// password is wrong
+					else if (!(result == true)) {
+						let obj = {success: false, errors:['Unknown error, please retry later.']};
+						res.status(401).json(obj);							
+					}
+					
+					// password is right, delete the account
+					else {
+						let sql = 'DELETE FROM User WHERE _id == ' + row._id;
+						let db = DB.open();
+						db.run(sql);
+						DB.close(db);
+						let obj = {success: true};
+						res.status(200).json(obj);
+						
+					}
+				});
+			}
+		});
+		DB.close(db);
 	});
 }
