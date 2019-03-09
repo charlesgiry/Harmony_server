@@ -21,6 +21,7 @@ app.use(morgan('dev'));
 const func = require(__dirname + '/app/functions.js');
 const DB = require(__dirname +'/app/db/db.js');
 const auth = require(__dirname + '/app/auth/auth.js')(app, config, DB, func, check, validationResult, bcrypt);
+const server = require(__dirname + '/app/server/server.js')(app, DB, func, check, validationResult);
 
 // Start server
 https.createServer({
@@ -28,5 +29,5 @@ https.createServer({
 	cert: fs.readFileSync(__dirname + '/config/server.cert')
 }, app)
 .listen(3000, function () {
-	console.log('app listening on port *:3000')
+	console.log('\napp listening on port *:3000')
 })
