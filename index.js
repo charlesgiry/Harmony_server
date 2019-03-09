@@ -24,9 +24,9 @@ const auth = require(__dirname + '/app/auth/auth.js')(app, config, DB, func, che
 
 // Start server
 https.createServer({
-  key: fs.readFileSync(__dirname + '/config/server.key'),
-  cert: fs.readFileSync(__dirname + '/config/server.cert')
+	key: fs.readFileSync(__dirname + '/config/server.key'),
+	cert: fs.readFileSync(__dirname + '/config/server.cert')
 }, app)
 .listen(3000, function () {
-  console.log('app listening on port *:3000')
+	console.log('app listening on port *:3000')
 })
