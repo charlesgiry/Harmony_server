@@ -1,4 +1,4 @@
-module.exports = function(app, db, func, check, validationResult) {
+module.exports = function(app, db, func, validator) {
 	console.log('Server module loaded');
-	require(__dirname +'/routes.js')(app, db, func, check, validationResult);
+	require(__dirname +'/routes.js')(app, db, func, validator);
 }

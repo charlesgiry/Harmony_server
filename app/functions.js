@@ -3,8 +3,8 @@ const config = require('../config/config.json');
 
 module.exports = {
 	// Generate a jwt session token
-	gen_token: function(id, username) {
-		const token = jwt.sign({_id: id, username: username}, config.SECRET);
+	gen_token: function(type, id) {
+		const token = jwt.sign({type: type,_id: id}, config.SECRET);
 		return token;
 	},
 	
@@ -17,10 +17,5 @@ module.exports = {
 			var obj;
 			return obj;
 		}
-	},
-	
-	invite_token: function(serverId) {
-		const token = jwt.sign({_id: serverId}, config.SECRET);
-		return token;
 	},
 }

@@ -6,7 +6,8 @@ const https = require('https');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const {check, validationResult} = require('express-validator/check');
+//const {check, validationResult} = require('express-validator/check');
+const validator = require('express-validator/check');
 const bcrypt = require('bcrypt');
 
 // application settings
@@ -20,8 +21,8 @@ app.use(morgan('dev'));
 // User modules
 const func = require(__dirname + '/app/functions.js');
 const DB = require(__dirname +'/app/db/db.js');
-const auth = require(__dirname + '/app/auth/auth.js')(app, config, DB, func, check, validationResult, bcrypt);
-const server = require(__dirname + '/app/server/server.js')(app, DB, func, check, validationResult);
+const user = require(__dirname + '/app/user/user.js')(app, config, DB, func, bcrypt, validator);
+const server = require(__dirname + '/app/server/server.js')(app, DB, func, validator);
 
 // Start server
 https.createServer({
